@@ -1,0 +1,11 @@
+# Bash Ransomware
+Meant to be quick and dirty and portable to linux and BSD (solaris?)
+Requires the following dependancies:
+```
+which
+cut
+mv
+openssl
+chmod
+chflags
+```
