@@ -1,8 +1,0 @@
-#!/bin/sh
-{
-for i in `seq 20`; do
-	sleep 1
-	echo $(( ($i*100)/20 ))
-done 
-sleep 2 
-} | whiptail --gauge "Decrypting files..." 20 50 0

