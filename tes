@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Global Vars
 ERRMSG=""
@@ -93,9 +93,3 @@ for fil in $1*; do
 	fi
 done
 }
-
-check_req
-init
-for i in $@; do
-	navdir $i "pck"
-done

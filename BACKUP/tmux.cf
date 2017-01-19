@@ -1,0 +1,36 @@
+# Rename tabs automatically
+set-window-option -g automatic-rename on
+setw -g mode-mouse on
+#setw -g mouse on
+
+# switch panes using Alt-arrow without prefix
+bind -n M-Left select-pane -L
+bind -n M-Right select-pane -R
+bind -n M-Up select-pane -U
+bind -n M-Down select-pane -D
+# Shift arrow to switch windows
+bind -n S-Left  previous-window
+bind -n S-Right next-window
+
+## Status bar design
+set -g status-utf8 on
+set -g status-justify left
+set -g status-bg colour233
+set -g status-fg colour12
+
+
+# Edge borders
+set -g pane-border-fg colour241
+set -g pane-active-border-fg colour12
+bind r source-file ~/.tmux.conf
+
+
+set -g window-status-current-bg white
+set -g window-status-current-fg black
+set -g window-status-current-attr bold
+
+# Update time every second
+set -g status-interval 1
+set -g status-left ' #(whoami) '
+# Show the time and user
+set -g status-right '%H:%M:%S'

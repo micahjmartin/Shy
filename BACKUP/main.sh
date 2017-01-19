@@ -82,20 +82,8 @@ upk() {
 	rm RanPaul.$1
 }
 
-navdir() {
-for fil in $1*; do
-	if [ -f "$fil" ]; then
-		if [ "$2" != "" ]; then
-			$2 $fil
-		fi
-	elif [ -d "$fil" ]; then
-		navdir "$fil/"
-	fi
-done
-}
-
 check_req
 init
 for i in $@; do
-	navdir $i "pck"
+	pck $i
 done
