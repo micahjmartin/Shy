@@ -1,25 +1,8 @@
 #!/bin/sh
-tet() {
-	string="$1"
-	word="vmware"
-	res=$(echo $string | awk "/.*$word.*/")
-	if [ "$res" = "" ]; then
-		echo [-] $1 doesnt contain $word
-	else
-		echo [+] $1 contains $word
-	fi
-}
 
-navdir() {
-for fil in $1*; do
-	if [ -f "$fil" ]; then
-		if [ "$2" != "" ]; then
-			$2 $fil
-		fi
-	elif [ -d "$fil" ]; then
-		navdir "$fil/" "$2"
-	fi
-done
-}
+trap '' INT
+trap 'echo [!] Trapped' TERM
 
-navdir $1 "tet"
+echo [+] Sleeping
+sleep 10
+echo [+] Done
