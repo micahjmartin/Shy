@@ -10,3 +10,4 @@ chmod
 chflags
 ```
 awk
+openssl genrsa -out priv.key 2048

