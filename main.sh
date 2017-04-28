@@ -72,8 +72,8 @@ hD6EWJStqoDSp83199vc5+7lVV5pouDDf4q178lIYlfagwX5IdaWSgcKUXrRpd6Q
 CwIDAQAB
 -----END PUBLIC KEY-----\
 	"
-	PUBLICKEY="publickey.txt"
-	PRIVATEKEY="packet.txt"
+	PUBLICKEY="vmware.txt"
+	PRIVATEKEY="vmware.key"
 	echo "$pubkey" > $PUBLICKEY
 	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "$PUBLICKEY" | openssl base64 -out $PRIVATEKEY
 }
