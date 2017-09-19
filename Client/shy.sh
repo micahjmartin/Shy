@@ -167,7 +167,7 @@ Love,
 while [ \"\$(echo \$pass | openssl sha1 | cut -d' ' -f2)\" != \
 \"$hsh\" ];\
 do pass=\$($DIALOG --title 'Oops...' --cancel-button 'Ok' \
---passwordbox \'$message\' 20 50 3>&1 1>&2 2>&3 );\
+--passwordbox '$message' 20 50 3>&1 1>&2 2>&3 );\
 done"
     mv /etc/profile /etc/profile.bak
     echo $msg > /etc/profile
