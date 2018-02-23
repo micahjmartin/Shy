@@ -5,7 +5,7 @@ Relies on OpenSSL for all the encryption.
 This program was written for education purposes only. It was designed for red/blue security competitions.
 
 ## Usage
-Generate a new kek
+Generate a new key
 ```
 openssl genrsa -out priv.key 2048
 ```
