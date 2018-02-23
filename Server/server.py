@@ -14,4 +14,4 @@ def shy_decrypt():
     data = {}
     data['password'] = "unlockme"
     data['files'] = ["file.txt", "/home/"]
-    return render_template("shy_decryptor.j2", data=data)
+    return render_template("shy_decrypt.j2", data=data)
