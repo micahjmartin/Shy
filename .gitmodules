@@ -1,0 +1,3 @@
+[submodule "shy/parser"]
+	path = shy/parser
+	url = https://github.com/micahjmartin/Bash-Parser

